@@ -511,7 +511,7 @@ async def ship(ctx, member1: discord.Member, member2: discord.Member):
 async def help_cmd(ctx):
     embed = discord.Embed(title="Menú de Ayuda", description=f"Prefijo actual: `{await bot.get_prefix(ctx.message)}`", color=discord.Color.blurple())
     
-    moderation = "`ban`, `kick`, `softban`, `timeout`, `unmute`, `purge`, `nuke`, `lock`, `unlock`, `slowmode`, `addrole`, `removerole`"
+    moderation = "`ban`, `kick`, `softban`, `timeout`, `unmute`, `purge`, `lock`, `unlock`, `slowmode`, `addrole`, `removerole`"
     warns = "`warn`, `, `delwarn`, `clearwarns`"
     utility = "`invite`, `snipe`, `editsnipe`, `userinfo`, `serverinfo`, `avatar`, `ping`, `uptime`"
     config = "`setprefix`, `setlog`"
