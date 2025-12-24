@@ -293,19 +293,24 @@ async def clearwarns(ctx, member: discord.Member):
 # UTILIDAD / INFORMACIÓN
 # ==============================================================================
 
+# ==============================================================================
+# UTILIDAD / INFORMACIÓN
+# ==============================================================================
+
 class InviteView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(
             discord.ui.Button(
                 label="Invitar Ultimate Bot",
-                style=discord.ButtonStyle.secondary,
+                style=discord.ButtonStyle.secondary,  # BOTÓN GRIS
                 url="https://discord.com/oauth2/authorize?client_id=1438665735118520371&permissions=8&integration_type=0&scope=bot",
                 emoji="🤖"
             )
         )
 
-    @bot.command(name="invite")
+
+@bot.command(name="invite")
 async def invite(ctx):
     embed = discord.Embed(
         title="Invita Ultimate Mod Bot",
@@ -323,98 +328,115 @@ async def invite(ctx):
         embed.set_thumbnail(url=bot.user.avatar.url)
 
     embed.set_footer(text="Ultimate Mod Bot • Invite System")
-
     await ctx.send(embed=embed, view=InviteView())
 
-    
-    
-    @bot.command(name="snipe")
+
+@bot.command(name="snipe")
 async def snipe(ctx):
     data = bot.sniped_messages.get(ctx.channel.id)
     if not data:
         return await ctx.send("❌ No hay nada que snipear aquí.")
-    
-    embed = discord.Embed(description=data["content"], color=discord.Color.purple(), timestamp=data["time"])
-    embed.set_author(name=f"{data['author']} borró esto:", icon_url=data['author'].avatar.url)
+
+    embed = discord.Embed(
+        description=data["content"],
+        color=discord.Color.purple(),
+        timestamp=data["time"]
+    )
+    embed.set_author(
+        name=f"{data['author']} borró esto:",
+        icon_url=data['author'].avatar.url
+    )
     await ctx.send(embed=embed)
+
 
 @bot.command(name="editsnipe")
 async def editsnipe(ctx):
     data = bot.editsniped_messages.get(ctx.channel.id)
     if not data:
         return await ctx.send("❌ No hay mensajes editados recientemente.")
-    
+
     embed = discord.Embed(color=discord.Color.blue())
-    embed.set_author(name=f"{data['author']} editó esto:", icon_url=data['author'].avatar.url)
+    embed.set_author(
+        name=f"{data['author']} editó esto:",
+        icon_url=data['author'].avatar.url
+    )
     embed.add_field(name="Antes", value=data["before"], inline=False)
     embed.add_field(name="Después", value=data["after"], inline=False)
     await ctx.send(embed=embed)
+
 
 @bot.command(name="userinfo", aliases=["ui", "whois"])
 async def userinfo(ctx, member: discord.Member = None):
     member = member or ctx.author
     roles = [role.mention for role in member.roles if role.name != "@everyone"]
-    
-    embed = discord.Embed(title=f"Info de {member}", color=member.color)
-    embed.set_thumbnail(url=member.avatar.url if member.avatar else member.default_avatar.url)
+
+    embed = discord.Embed(
+        title=f"Info de {member}",
+        color=member.color
+    )
+    embed.set_thumbnail(
+        url=member.avatar.url if member.avatar else member.default_avatar.url
+    )
     embed.add_field(name="ID", value=member.id)
-    embed.add_field(name="Cuenta Creada", value=member.created_at.strftime("%d/%m/%Y"))
-    embed.add_field(name="Se unió al Server", value=member.joined_at.strftime("%d/%m/%Y"))
-    embed.add_field(name=f"Roles ({len(roles)})", value=", ".join(roles) if roles else "Ninguno", inline=False)
+    embed.add_field(
+        name="Cuenta Creada",
+        value=member.created_at.strftime("%d/%m/%Y")
+    )
+    embed.add_field(
+        name="Se unió al Server",
+        value=member.joined_at.strftime("%d/%m/%Y")
+    )
+    embed.add_field(
+        name=f"Roles ({len(roles)})",
+        value=", ".join(roles) if roles else "Ninguno",
+        inline=False
+    )
     await ctx.send(embed=embed)
+
 
 @bot.command(name="serverinfo", aliases=["si"])
 async def serverinfo(ctx):
     guild = ctx.guild
-    embed = discord.Embed(title=guild.name, color=discord.Color.green())
-    if guild.icon: embed.set_thumbnail(url=guild.icon.url)
+    embed = discord.Embed(
+        title=guild.name,
+        color=discord.Color.green()
+    )
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+
     embed.add_field(name="Dueño", value=guild.owner)
     embed.add_field(name="Miembros", value=guild.member_count)
     embed.add_field(name="Canales", value=len(guild.channels))
     embed.add_field(name="Roles", value=len(guild.roles))
     embed.add_field(name="Nivel de Boost", value=guild.premium_tier)
-    embed.add_field(name="Creado el", value=guild.created_at.strftime("%d/%m/%Y"))
+    embed.add_field(
+        name="Creado el",
+        value=guild.created_at.strftime("%d/%m/%Y")
+    )
     await ctx.send(embed=embed)
+
 
 @bot.command(name="avatar", aliases=["av"])
 async def avatar(ctx, member: discord.Member = None):
     member = member or ctx.author
     embed = discord.Embed(title=f"Avatar de {member}")
-    embed.set_image(url=member.avatar.url if member.avatar else member.default_avatar.url)
+    embed.set_image(
+        url=member.avatar.url if member.avatar else member.default_avatar.url
+    )
     await ctx.send(embed=embed)
+
 
 @bot.command(name="ping")
 async def ping(ctx):
     await ctx.send(f"🏓 Pong! Latencia: {round(bot.latency * 1000)}ms")
 
+
 @bot.command(name="uptime")
 async def uptime(ctx):
-    delta_uptime = datetime.datetime.now() - bot.start_time
-    hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
+    delta = datetime.datetime.now() - bot.start_time
+    hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
     await ctx.send(f"⏱️ En línea por: {hours}h {minutes}m {seconds}s")
-
-# ==============================================================================
-# CONFIGURACIÓN DEL BOT
-# ==============================================================================
-
-@bot.command(name="setprefix")
-@commands.has_permissions(administrator=True)
-async def setprefix(ctx, new_prefix: str):
-    async with aiosqlite.connect("bot_database.db") as db:
-        await db.execute("INSERT OR REPLACE INTO guilds (guild_id, prefix) VALUES (?, ?)", (ctx.guild.id, new_prefix))
-        await db.commit()
-    await ctx.send(f"✅ Prefijo actualizado a `{new_prefix}`")
-
-@bot.command(name="setlog")
-@commands.has_permissions(administrator=True)
-async def setlog(ctx, channel: discord.TextChannel):
-    async with aiosqlite.connect("bot_database.db") as db:
-        await db.execute("UPDATE guilds SET log_channel = ? WHERE guild_id = ?", (channel.id, ctx.guild.id))
-        # Si no existe la fila, insertarla (puede pasar si no cambiaron prefix)
-        await db.execute("INSERT OR IGNORE INTO guilds (guild_id, log_channel) VALUES (?, ?)", (ctx.guild.id, channel.id))
-        await db.commit()
-    await ctx.send(f"✅ Canal de logs establecido en {channel.mention}")
 
 # ==============================================================================
 # COMANDOS DE DIVERSIÓN Y MISC
