@@ -512,7 +512,7 @@ async def help_cmd(ctx):
     embed = discord.Embed(title="Menú de Ayuda", description=f"Prefijo actual: `{await bot.get_prefix(ctx.message)}`", color=discord.Color.blurple())
     
     moderation = "`ban`, `kick`, `softban`, `timeout`, `unmute`, `purge`, `lock`, `unlock`, `slowmode`, `addrole`, `removerole`"
-    warns = "`warn`, `, `delwarn`, `clearwarns`"
+    warns = "`warn`, `delwarn`, `clearwarns`"
     utility = "`invite`, `snipe`, `editsnipe`, `userinfo`, `serverinfo`, `avatar`, `ping`, `uptime`"
     config = "`setprefix`, `setlog`"
     fun = "`8ball`, `coinflip`, `dice`, `say`, `embed`, `poll`, `choose`, `reverse`, `ship`"
