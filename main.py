@@ -302,7 +302,7 @@ class InviteView(discord.ui.View):
         super().__init__(timeout=None)
         self.add_item(
             discord.ui.Button(
-                label="Invitar Ultimate Bot",
+                label="invite shadow",
                 style=discord.ButtonStyle.secondary,  # BOTÓN GRIS
                 url="https://discord.com/oauth2/authorize?client_id=1438665735118520371&permissions=8&integration_type=0&scope=bot",
                 emoji="🤖"
@@ -313,9 +313,9 @@ class InviteView(discord.ui.View):
 @bot.command(name="invite")
 async def invite(ctx):
     embed = discord.Embed(
-        title="Invita Ultimate Mod Bot",
+        title="Invite shadow",
         description=(
-            "Añade **Ultimate Mod Bot** a tu servidor.\n\n"
+            "Añade **Shadow bot** a tu servidor.\n\n"
             "🔹 Moderación avanzada\n"
             "🔹 Protección\n"
             "🔹 Sistemas inteligentes\n\n"
