@@ -95,7 +95,7 @@ async def on_message_edit(before, after):
 
 def create_embed(title, description, color=discord.Color.blue()):
     embed = discord.Embed(title=title, description=description, color=color)
-    embed.set_footer(text="Ultimate Mod Bot")
+    embed.set_footer(text="Shadow Mod Bot")
     embed.timestamp = datetime.datetime.now()
     return embed
 
@@ -513,7 +513,7 @@ async def help_cmd(ctx):
     
     moderation = "`ban`, `kick`, `softban`, `timeout`, `unmute`, `purge`, `nuke`, `lock`, `unlock`, `slowmode`, `addrole`, `removerole`"
     warns = "`warn`, `, `delwarn`, `clearwarns`"
-    utility = "`snipe`, `editsnipe`, `userinfo`, `serverinfo`, `avatar`, `ping`, `uptime`"
+    utility = "`invite`, `snipe`, `editsnipe`, `userinfo`, `serverinfo`, `avatar`, `ping`, `uptime`"
     config = "`setprefix`, `setlog`"
     fun = "`8ball`, `coinflip`, `dice`, `say`, `embed`, `poll`, `choose`, `reverse`, `ship`"
     
