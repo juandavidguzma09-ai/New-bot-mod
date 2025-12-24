@@ -299,13 +299,13 @@ class InviteView(discord.ui.View):
         self.add_item(
             discord.ui.Button(
                 label="Invitar Ultimate Bot",
-                style=discord.ButtonStyle.secondary,  # BOTÓN GRIS
+                style=discord.ButtonStyle.secondary,
                 url="https://discord.com/oauth2/authorize?client_id=1438665735118520371&permissions=8&integration_type=0&scope=bot",
                 emoji="🤖"
             )
         )
 
-@bot.command(name="invite")
+    @bot.command(name="invite")
 async def invite(ctx):
     embed = discord.Embed(
         title="Invita Ultimate Mod Bot",
@@ -325,6 +325,8 @@ async def invite(ctx):
     embed.set_footer(text="Ultimate Mod Bot • Invite System")
 
     await ctx.send(embed=embed, view=InviteView())
+
+    
     
     @bot.command(name="snipe")
 async def snipe(ctx):
