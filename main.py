@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
-from config import TOKEN
+import os
+
+TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.all()
 
