@@ -293,7 +293,40 @@ async def clearwarns(ctx, member: discord.Member):
 # UTILIDAD / INFORMACIÓN
 # ==============================================================================
 
-@bot.command(name="snipe")
+class InviteView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(
+            discord.ui.Button(
+                label="Invitar Ultimate Bot",
+                style=discord.ButtonStyle.secondary,  # BOTÓN GRIS
+                url="https://discord.com/oauth2/authorize?client_id=1438665735118520371&permissions=8&integration_type=0&scope=bot",
+                emoji="🤖"
+            )
+        )
+
+@bot.command(name="invite")
+async def invite(ctx):
+    embed = discord.Embed(
+        title="Invita Ultimate Mod Bot",
+        description=(
+            "Añade **Ultimate Mod Bot** a tu servidor.\n\n"
+            "🔹 Moderación avanzada\n"
+            "🔹 Protección\n"
+            "🔹 Sistemas inteligentes\n\n"
+            "Pulsa el botón de abajo 👇"
+        ),
+        color=discord.Color.dark_grey()
+    )
+
+    if bot.user.avatar:
+        embed.set_thumbnail(url=bot.user.avatar.url)
+
+    embed.set_footer(text="Ultimate Mod Bot • Invite System")
+
+    await ctx.send(embed=embed, view=InviteView())
+    
+    @bot.command(name="snipe")
 async def snipe(ctx):
     data = bot.sniped_messages.get(ctx.channel.id)
     if not data:
