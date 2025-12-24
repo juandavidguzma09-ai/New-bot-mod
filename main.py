@@ -228,7 +228,7 @@ async def reglas(ctx):
 
 @bot.command()
 async def codigo(ctx):
-    await ctx.send("🌐 WJqxK")
+    await ctx.send("🌐 Aqui esta el código de nuestro servidor roleplay WJqxK ")
 
 @bot.command()
 async def redes(ctx):
