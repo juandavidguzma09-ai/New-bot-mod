@@ -5,12 +5,9 @@ import asyncio
 import aiosqlite
 import random
 import io
+import os
 
-# ==============================================================================
-# CONFIGURACIÓN
-# ==============================================================================
-
-TOKEN = "TU_TOKEN_AQUI"  # <--- PON TU TOKEN AQUÍ
+TOKEN = os.getenv("TOKEN")
 DEFAULT_PREFIX = "!"
 
 # Intents necesarios para moderación y miembros
