@@ -46,7 +46,7 @@ async def help(ctx):
     )
     embed.add_field(
         name="🌐 Comunidad (+20)",
-        value="reglas, ip, redes, staff, evento, eventos,\nsugerir, report, perfil, nivel, ranking,\nbienvenida, despedida, faq, horarios, donate,\nlinks, changelog, estado",
+        value="reglas, codigo, redes, staff, evento, eventos,\nsugerir, report, perfil, nivel, ranking,\nbienvenida, despedida, faq, horarios, donate,\nlinks, changelog, estado",
         inline=False
     )
     embed.add_field(name="🎛 Panel", value="`!panel` `!comunidad`", inline=False)
@@ -227,16 +227,16 @@ async def reglas(ctx):
     await ctx.send("📜 Respeto, no spam, no toxicidad")
 
 @bot.command()
-async def ip(ctx):
-    await ctx.send("🌐 play.tuservidor.net")
+async def codigo(ctx):
+    await ctx.send("🌐 WJqxK")
 
 @bot.command()
 async def redes(ctx):
-    await ctx.send("📱 Twitter | Instagram | TikTok")
+    await ctx.send("📱 TikTok: mexicanrprealistic")
 
 @bot.command()
 async def staff(ctx):
-    await ctx.send("👥 Owner | Admins | Mods")
+    await ctx.send("👥 Sin staff autorizado")
 
 @bot.command()
 async def evento(ctx):
