@@ -69,7 +69,7 @@ async def on_ready():
     print(f"Conectado como {bot.user} (ID: {bot.user.id})")
     print(f"Total de comandos: {len(bot.commands)}")
     print("--- El Bot está listo para moderar ---")
-    await bot.change_presence(activity=discord.Game(name=f"Protegiendo {len(bot.guilds)} servidores | !help"))
+    await bot.change_presence(activity=discord.Game(name=f"Protegiendo {len(bot.guilds)} servidores | $help"))
 
 @bot.event
 async def on_message_delete(message):
