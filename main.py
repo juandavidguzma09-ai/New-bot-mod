@@ -8,7 +8,7 @@ import io
 import os
 
 TOKEN = os.getenv("TOKEN")
-DEFAULT_PREFIX = "!"
+DEFAULT_PREFIX = "$"
 
 # Intents necesarios para moderación y miembros
 intents = discord.Intents.all()
@@ -40,7 +40,7 @@ class UltimateBot(commands.Bot):
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS guilds (
                     guild_id INTEGER PRIMARY KEY,
-                    prefix TEXT DEFAULT '!',
+                    prefix TEXT DEFAULT '$',
                     log_channel INTEGER
                 )
             """)
