@@ -460,112 +460,378 @@ async def dice(ctx):
 @commands.has_permissions(manage_messages=True)
 async def say(ctx, *, message):
     await ctx.message.delete()
-    await ctx.send(message)
+import discord
+from discord.ext import commands, tasks
+import aiosqlite
+import aiohttp
+import asyncio
+import datetime
+import random
+import io
+from itertools import cycle
 
-@bot.command(name="embed")
-@commands.has_permissions(manage_messages=True)
-async def embed_cmd(ctx, title, *, description):
-    # Uso: !embed "Titulo entre comillas" Descripción del embed
-    embed = create_embed(title, description)
-    await ctx.send(embed=embed)
+# --- CONFIGURACIÓN ---
+TOKEN = "TU_TOKEN_AQUI"
+PREFIX = "$"
 
-@bot.command(name="poll")
-async def poll(ctx, question, *options):
-    if len(options) < 2:
-        return await ctx.send("Necesitas al menos 2 opciones. Uso: `!poll \"Pregunta\" \"Opción 1\" \"Opción 2\"`")
-    if len(options) > 10:
-        return await ctx.send("Máximo 10 opciones.")
-    
-    reactions = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
-    description = []
-    for x, option in enumerate(options):
-        description.append(f"\n {reactions[x]} {option}")
+# --- INTENTS ---
+intents = discord.Intents.all()
+intents.members = True
+intents.message_content = True
+
+class HyperBot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix=PREFIX,
+            intents=intents,
+            help_command=None,
+            case_insensitive=True
+        )
+        self.start_time = datetime.datetime.now()
+        self.afk_users = {} # Cache en memoria para rapidez
+
+    async def setup_hook(self):
+        await self.init_db()
+        await self.add_cog(Moderation(self))
+        await self.add_cog(Utility(self))
+        await self.add_cog(FunAndSocial(self))
+        await self.add_cog(Economy(self))
+        print("✅ | TODOS LOS SISTEMAS CARGADOS")
+
+    async def init_db(self):
+        async with aiosqlite.connect("hyper_public.db") as db:
+            await db.execute("CREATE TABLE IF NOT EXISTS economy (user_id INTEGER PRIMARY KEY, money INTEGER DEFAULT 0, bank INTEGER DEFAULT 0)")
+            await db.commit()
+
+    async def on_ready(self):
+        print(f"🌐 | LOGUEADO COMO: {self.user}")
+        if not self.status_task.is_running():
+            self.status_task.start()
+
+    @tasks.loop(seconds=4)
+    async def status_task(self):
+        stats = [
+            f"Sirviendo a {len(self.guilds)} servidores",
+            "Moderación Avanzada",
+            f"Usuarios: {sum(g.member_count for g in self.guilds)}",
+            "$help | By Infinito"
+        ]
+        await self.change_presence(activity=discord.Game(name=random.choice(stats)))
+
+    # Evento AFK Global
+    async def on_message(self, message):
+        if message.author.bot: return
         
-    embed = discord.Embed(title=question, description="".join(description), color=discord.Color.gold())
-    msg = await ctx.send(embed=embed)
-    for i in range(len(options)):
-        await msg.add_reaction(reactions[i])
+        # Si el usuario vuelve
+        if message.author.id in self.afk_users:
+            del self.afk_users[message.author.id]
+            await message.channel.send(f"👋 {message.author.mention}, bienvenido de nuevo. Tu AFK ha sido removido.", delete_after=5)
 
-@bot.command(name="choose")
-async def choose(ctx, *choices):
-    if not choices: return await ctx.send("Dame opciones.")
-    await ctx.send(f"🤔 Yo elijo: **{random.choice(choices)}**")
+        # Si mencionan a un AFK
+        if message.mentions:
+            for mention in message.mentions:
+                if mention.id in self.afk_users:
+                    reason = self.afk_users[mention.id]
+                    embed = discord.Embed(description=f"💤 **{mention.name}** está AFK: {reason}", color=discord.Color.dark_gray())
+                    await message.channel.send(embed=embed, delete_after=8)
+        
+        await self.process_commands(message)
 
-@bot.command(name="reverse")
-async def reverse(ctx, *, text: str):
-    await ctx.send(text[::-1])
+bot = HyperBot()
 
-@bot.command(name="ship")
-async def ship(ctx, member1: discord.Member, member2: discord.Member):
-    percent = random.randint(0, 100)
-    emoji = "💔" if percent < 30 else "🧡" if percent < 70 else "💖"
-    bar = "█" * (percent // 10) + "░" * (10 - (percent // 10))
-    embed = discord.Embed(title=f"Ship: {member1.name} x {member2.name}", description=f"{percent}% {emoji}\n[{bar}]", color=discord.Color.pink())
-    await ctx.send(embed=embed)
-
-# ==============================================================================
-# AYUDA PERSONALIZADA
-# ==============================================================================
-
-@bot.command(name="help")
-async def help_cmd(ctx):
-    embed = discord.Embed(title="Menú de Ayuda", description=f"Prefijo actual: `{await bot.get_prefix(ctx.message)}`", color=discord.Color.blurple())
-    
-    moderation = "`ban`, `kick`, `softban`, `timeout`, `unmute`, `purge`, `lock`, `unlock`, `slowmode`, `addrole`, `removerole`"
-    warns = "`warn`, `delwarn`, `clearwarns`"
-    utility = "`invite`, `snipe`, `editsnipe`, `userinfo`, `serverinfo`, `avatar`, `ping`, `uptime`"
-    config = "`setprefix`, `setlog`"
-    fun = "`8ball`, `coinflip`, `dice`, `say`, `embed`, `poll`, `choose`, `reverse`, `ship`"
-    
-    embed.add_field(name="👮 Moderación", value=moderation, inline=False)
-    embed.add_field(name="⚠️ Advertencias", value=warns, inline=False)
-    embed.add_field(name="🛠️ Utilidad", value=utility, inline=False)
-    embed.add_field(name="⚙️ Configuración", value=config, inline=False)
-    embed.add_field(name="🎲 Diversión", value=fun, inline=False)
-    
-    embed.set_footer(text="Usa !comando para ejecutar.")
-    await ctx.send(embed=embed)
+# --- HELPER VISUAL ---
+def create_embed(title, desc, color=0x5865F2, img=None, thumb=None):
+    embed = discord.Embed(title=title, description=desc, color=color, timestamp=datetime.datetime.now())
+    if img: embed.set_image(url=img)
+    if thumb: embed.set_thumbnail(url=thumb)
+    embed.set_footer(text="Hyper System Public", icon_url=bot.user.avatar.url if bot.user.avatar else None)
+    return embed
 
 # ==============================================================================
-# MANEJO DE ERRORES (ERROR HANDLING)
+# 🛡️ COG 1: MODERACIÓN DE ALTO NIVEL (ADMINISTRADORES)
 # ==============================================================================
+class Moderation(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def massrole(self, ctx, role: discord.Role, target: str = "humans"):
+        """
+        Da un rol a TODOS. 
+        Uso: $massrole @Rol humans (o bots/all)
+        """
+        if ctx.author.top_role <= role:
+            return await ctx.send("❌ El rol es superior a ti.")
+        
+        await ctx.send(f"🔄 Iniciando asignación masiva de **{role.name}** a **{target}**. Esto tomará tiempo...")
+        count = 0
+        members = ctx.guild.members
+        
+        for member in members:
+            if target == "bots" and not member.bot: continue
+            if target == "humans" and member.bot: continue
+            
+            if role not in member.roles:
+                try:
+                    await member.add_roles(role)
+                    count += 1
+                    await asyncio.sleep(0.5) # Evitar Rate Limit
+                except:
+                    pass
+        
+        await ctx.send(f"✅ Operación finalizada. Rol añadido a **{count}** miembros.")
+
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def hackban(self, ctx, user_id: int, *, reason="Hackban por seguridad"):
+        """Banea a alguien que NO está en el servidor."""
+        try:
+            user = await self.bot.fetch_user(user_id)
+            await ctx.guild.ban(user, reason=reason)
+            await ctx.send(embed=create_embed("🛡️ HACKBAN", f"El usuario **{user.name}** (`{user_id}`) ha sido baneado preventivamente.", discord.Color.red()))
+        except:
+            await ctx.send("❌ Usuario no encontrado o error de permisos.")
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def purge(self, ctx, amount: int, filtro: str = None):
+        """
+        $purge 100
+        $purge 50 bots (Solo borra bots)
+        $purge 50 images (Solo borra imágenes)
+        """
+        def check(m):
+            if filtro == "bots": return m.author.bot
+            if filtro == "images": return len(m.attachments) > 0
+            return True
+
+        deleted = await ctx.channel.purge(limit=amount, check=check)
+        await ctx.send(f"🧹 Eliminados **{len(deleted)}** mensajes.", delete_after=3)
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def lockdown(self, ctx, channel: discord.TextChannel = None):
+        """Cierra el canal actual o uno mencionado."""
+        channel = channel or ctx.channel
+        await channel.set_permissions(ctx.guild.default_role, send_messages=False)
+        await ctx.send(embed=create_embed("🔒 LOCKDOWN", f"El canal {channel.mention} ha sido cerrado.", discord.Color.dark_red()))
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def unlock(self, ctx, channel: discord.TextChannel = None):
+        """Abre un canal cerrado."""
+        channel = channel or ctx.channel
+        await channel.set_permissions(ctx.guild.default_role, send_messages=True)
+        await ctx.send(embed=create_embed("🔓 UNLOCK", f"El canal {channel.mention} está abierto.", discord.Color.green()))
+
+    @commands.command()
+    @commands.has_permissions(manage_channels=True)
+    async def nuke(self, ctx):
+        """Clona y destruye el canal para limpiarlo al 100%."""
+        embed = create_embed("☢️ NUKE TÁCTICO", "Detonación en 3 segundos...", discord.Color.orange())
+        await ctx.send(embed=embed)
+        await asyncio.sleep(3)
+        new_ch = await ctx.channel.clone(reason="Nuke Command")
+        await ctx.channel.delete()
+        await new_ch.send(embed=create_embed("☢️ LIMPIEZA COMPLETADA", "Canal reconstruido exitosamente.", discord.Color.green()))
+
+# ==============================================================================
+# 🛠️ COG 2: UTILIDAD & HERRAMIENTAS (LO NUEVO)
+# ==============================================================================
+class Utility(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    @commands.has_permissions(manage_emojis=True)
+    async def steal(self, ctx, emoji: discord.PartialEmoji, nombre: str = None):
+        """Roba un emoji de otro servidor y lo agrega al tuyo."""
+        if not nombre: nombre = emoji.name
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(emoji.url) as resp:
+                if resp.status != 200: return await ctx.send("❌ Error al descargar imagen.")
+                data = await resp.read()
+        
+        try:
+            new_emoji = await ctx.guild.create_custom_emoji(name=nombre, image=data)
+            await ctx.send(embed=create_embed("😜 Emoji Robado", f"He añadido {new_emoji} con el nombre **{nombre}**.", discord.Color.green()))
+        except Exception as e:
+            await ctx.send(f"❌ Error (Quizás no quedan huecos): {e}")
+
+    @commands.command()
+    async def imitate(self, ctx, member: discord.Member, *, mensaje):
+        """Crea un webhook y habla como si fueras otro usuario."""
+        if not ctx.channel.permissions_for(ctx.me).manage_webhooks:
+            return await ctx.send("❌ Necesito permiso de `Gestionar Webhooks`.")
+        
+        webhook = await ctx.channel.create_webhook(name=member.display_name)
+        await ctx.message.delete()
+        
+        await webhook.send(
+            str(mensaje), 
+            username=member.display_name, 
+            avatar_url=member.display_avatar.url
+        )
+        await asyncio.sleep(5)
+        await webhook.delete() # Borrar para no ensuciar
+
+    @commands.command()
+    async def afk(self, ctx, *, reason="AFK"):
+        """Ponte en modo Ausente."""
+        self.bot.afk_users[ctx.author.id] = reason
+        await ctx.send(f"💤 **{ctx.author.name}**, te he puesto en AFK. Razón: {reason}")
+
+    @commands.command()
+    async def banner(self, ctx, member: discord.Member = None):
+        """Consigue el banner de un usuario (Nitro o Color)."""
+        member = member or ctx.author
+        user = await self.bot.fetch_user(member.id)
+        if user.banner:
+            await ctx.send(embed=create_embed(f"Banner de {user.name}", "", img=user.banner.url))
+        else:
+            await ctx.send("❌ Este usuario no tiene banner, usa un color sólido.")
+
+    @commands.command()
+    async def jumbo(self, ctx, emoji: discord.PartialEmoji):
+        """Muestra un emoji en tamaño gigante."""
+        await ctx.send(embed=create_embed("JUMBO", "", img=emoji.url))
+
+    @commands.command()
+    async def wiki(self, ctx, *, busqueda):
+        """Busca algo rápido en Wikipedia (Link directo)."""
+        url = f"https://es.wikipedia.org/wiki/{busqueda.replace(' ', '_')}"
+        await ctx.send(embed=create_embed(f"📚 Wikipedia: {busqueda}", f"[Click para leer el artículo]({url})", discord.Color.light_grey()))
+
+    @commands.command()
+    async def calc(self, ctx, *, operacion):
+        """Calculadora científica básica."""
+        allowed = set("0123456789+-*/.() ")
+        if set(operacion).issubset(allowed):
+            try:
+                res = eval(operacion)
+                await ctx.send(embed=create_embed("🧮 Calculadora", f"`{operacion}` = **{res}**", discord.Color.blurple()))
+            except:
+                await ctx.send("❌ Error de sintaxis.")
+        else:
+            await ctx.send("❌ Caracteres no permitidos.")
+
+# ==============================================================================
+# 🎉 COG 3: DIVERSIÓN Y SOCIAL
+# ==============================================================================
+class FunAndSocial(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def meme(self, ctx):
+        """Obtiene un meme aleatorio de Reddit."""
+        async with aiohttp.ClientSession() as cs:
+            async with cs.get('https://meme-api.com/gimme') as r:
+                res = await r.json()
+                if 'url' in res:
+                    embed = create_embed(res['title'], "", discord.Color.random(), img=res['url'])
+                    await ctx.send(embed=embed)
+                else:
+                    await ctx.send("❌ No encontré memes hoy.")
+
+    @commands.command()
+    async def ship(self, ctx, user1: discord.Member, user2: discord.Member = None):
+        """Calculadora de amor."""
+        user2 = user2 or ctx.author
+        percent = random.randint(0, 100)
+        bar = "█" * (percent // 10) + "░" * (10 - (percent // 10))
+        msg = f"💗 **{percent}%** de compatibilidad\n`[{bar}]`"
+        
+        if percent > 80: msg += "\n🔥 ¡Son almas gemelas!"
+        elif percent < 20: msg += "\n🥶 Mejor ni lo intenten..."
+        
+        await ctx.send(embed=create_embed(f"💘 {user1.name} x {user2.name}", msg, discord.Color.pink()))
+
+    @commands.command()
+    async def hack(self, ctx, member: discord.Member):
+        """Simula hackear a un usuario (Broma)."""
+        msg = await ctx.send(f"💻 Injecting malware to {member.name}...")
+        await asyncio.sleep(2)
+        await msg.edit(content="🔓 Bypassing firewall 2FA...")
+        await asyncio.sleep(2)
+        await msg.edit(content="📂 Downloading `homework_folder.zip`...")
+        await asyncio.sleep(2)
+        await msg.edit(content="📧 Finding IP address...")
+        await asyncio.sleep(2)
+        await msg.edit(content=f"✅ **HACK COMPLETADO**\nIP: 192.168.1.{random.randint(0,255)}\nEmail: {member.name}@gmail.com\nPass: iloveminecraft123")
+
+    @commands.command()
+    async def firstmsg(self, ctx):
+        """Te lleva al primer mensaje del canal."""
+        msg = [m async for m in ctx.channel.history(limit=1, oldest_first=True)][0]
+        await ctx.send(embed=create_embed("📜 Primer Mensaje", f"[Click para viajar al pasado]({msg.jump_url})", discord.Color.gold()))
+
+# ==============================================================================
+# 💰 COG 4: ECONOMÍA BÁSICA
+# ==============================================================================
+class Economy(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def get_bal(self, user_id):
+        async with aiosqlite.connect("hyper_public.db") as db:
+            cursor = await db.execute("SELECT money, bank FROM economy WHERE user_id=?", (user_id,))
+            row = await cursor.fetchone()
+            if not row:
+                await db.execute("INSERT INTO economy (user_id) VALUES (?)", (user_id,))
+                await db.commit()
+                return 0, 0
+            return row[0], row[1]
+
+    async def add_money(self, user_id, amount, is_bank=False):
+        async with aiosqlite.connect("hyper_public.db") as db:
+            col = "bank" if is_bank else "money"
+            await self.get_bal(user_id) # Asegurar registro
+            await db.execute(f"UPDATE economy SET {col} = {col} + ? WHERE user_id = ?", (amount, user_id))
+            await db.commit()
+
+    @commands.command(aliases=["bal"])
+    async def balance(self, ctx, member: discord.Member = None):
+        member = member or ctx.author
+        money, bank = await self.get_bal(member.id)
+        embed = create_embed(f"💳 Finanzas de {member.name}", f"💵 **Efectivo:** ${money}\n🏦 **Banco:** ${bank}\n💰 **Total:** ${money+bank}", discord.Color.green())
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    @commands.cooldown(1, 600, commands.BucketType.user)
+    async def work(self, ctx):
+        earnings = random.randint(50, 300)
+        jobs = ["Programador", "Streamer", "Cajero", "Abogado", "Hacker"]
+        await self.add_money(ctx.author.id, earnings)
+        await ctx.send(f"💼 Trabajaste como **{random.choice(jobs)}** y ganaste **${earnings}**.")
+
+    @commands.command()
+    @commands.cooldown(1, 1200, commands.BucketType.user)
+    async def crime(self, ctx):
+        if random.choice([True, False]):
+            earnings = random.randint(300, 800)
+            await self.add_money(ctx.author.id, earnings)
+            await ctx.send(f"😈 Robaste un banco y ganaste **${earnings}**.")
+        else:
+            loss = random.randint(100, 300)
+            await self.add_money(ctx.author.id, -loss)
+            await ctx.send(f"🚓 Te atrapó la policía. Pagaste **${loss}** de fianza.")
+
+# --- MANEJO DE ERRORES ---
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        return # Ignorar comandos inexistentes
-    
     if isinstance(error, commands.MissingPermissions):
-        perms = ", ".join(error.missing_permissions)
-        await ctx.send(f"❌ **Acceso denegado.** Te faltan permisos: `{perms}`")
-    
-    elif isinstance(error, commands.BotMissingPermissions):
-        perms = ", ".join(error.missing_permissions)
-        await ctx.send(f"❌ **No puedo hacer eso.** Me faltan permisos: `{perms}`")
-    
-    elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f"❌ **Faltan argumentos.** Uso correcto: `{ctx.prefix}{ctx.command.name} {ctx.command.signature}`")
-    
-    elif isinstance(error, commands.MemberNotFound):
-        await ctx.send("❌ No pude encontrar a ese miembro.")
-    
-    elif isinstance(error, commands.BadArgument):
-        await ctx.send("❌ Argumento inválido. Verifica si escribiste bien el número o mencionaste al usuario.")
-    
+        await ctx.send("❌ **Acceso Denegado:** No tienes permisos suficientes.")
     elif isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f"⏳ Espera {round(error.retry_after, 1)}s antes de usar este comando.")
-    
+        await ctx.send(f"⏳ **Cooldown:** Espera {round(error.retry_after)} segundos.")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("⚠️ **Faltan datos:** Revisa cómo usas el comando.")
+    elif isinstance(error, commands.BotMissingPermissions):
+        await ctx.send("❌ **Error:** No tengo permisos para hacer eso.")
     else:
-        print(f"Error en comando {ctx.command}: {error}")
-        await ctx.send("❌ Ocurrió un error inesperado. Revisa la consola si eres el dueño.")
-
-# ==============================================================================
-# EJECUCIÓN
-# ==============================================================================
+        print(f"Error: {error}")
 
 if __name__ == "__main__":
-    try:
-        bot.run(TOKEN)
-    except Exception as e:
-        print(f"Error al iniciar el bot: {e}")
-        print("Asegúrate de haber puesto el TOKEN correcto y tener activados los INTENTS en Discord Developer Portal.")
+    bot.run(TOKEN)
